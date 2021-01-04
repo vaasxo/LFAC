@@ -29,11 +29,11 @@ void InvalidToken();
 
 [a-zA-Z][_a-zA-Z0-9]*              : {yylval.dataType = strdup(yytext); return VARIABLE;}
 
-[0-9]+ 							   : {yylval.num = atoi(yytext); 		return INTEGER;}
+[0-9]+ 							   : {yylval.intVal= atoi(yytext); 		return INTEGER;}
 
-[0-9]*\.?[0-9]+                    : {yylval.float = atof(yytext); 		return FLOAT_VALUE;}
+[0-9]*\.?[0-9]+                    : {yylval.floatVal = atof(yytext); 		return FLOAT_VALUE;}
 
-[\`][_a-zA-Z0-9 ]*[\`]             : {yylval.char = yytext[1];    		return CHARACTER;}
+[\`][_a-zA-Z0-9 ]*[\`]             : {yylval.charVal = yytext[1];    		return CHARACTER;}
 
 //Control statements
 
