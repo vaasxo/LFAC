@@ -1,51 +1,31 @@
-%%
+%{
 
 #include <string.h>
 #include <stdlib.h>
-#include "y.tab.h"
+#include "Proiect.tab.h"
 void extern yyerror(char*);
 void InvalidToken();
 
+%}
+
+
 %%
 
-//Predefined types
+"int"    |
+"float"  |
+"char"   |
+"string" |
+"bool"    {yylval.dataType = strdup(yytext);return TYPE;}
 
-"int"   |
-"float" |
-"char"  |
-"string"|
-"bool"  : {yylval.dataType = strdup(yytext);return TYPE;}
+"const"  {return CONST;}
 
-//Constants
-
-"const" : {return CONST;}
-
-//Objects
-
-"object" : {yylval.dataType = strdup(yytext);return OBJECT;}
+"object"  {yylval.dataType = strdup(yytext);return OBJECT;}
 
 
-[a-zA-Z][_a-zA-Z0-9]*(\[[0-9]+\])+ : {yylval.str = strdup(yytext); 		return ARRAY;}
-
-[a-zA-Z][_a-zA-Z0-9]*              : {yylval.dataType = strdup(yytext); return VARIABLE;}
-
-[0-9]+ 							   : {yylval.intVal= atoi(yytext); 		return INTEGER;}
-
-[0-9]*\.?[0-9]+                    : {yylval.floatVal = atof(yytext); 		return FLOAT_VALUE;}
-
-[\`][_a-zA-Z0-9 ]*[\`]             : {yylval.charVal = yytext[1];    		return CHARACTER;}
-
-//Control statements
-
-"if" : {return IF;}
-
-"else" : {return ELSE;}
-
-"for" : {return FOR;}
-
-"while" : {return WHILE;}
-
-//Boolean exp
+"if"  {return IF;}
+"else"  {return ELSE;}
+"for"  {return FOR;}
+"while"  {return WHILE;}
 
 "&&" {return AND;}
 "||" {return OR;}
@@ -58,8 +38,6 @@ void InvalidToken();
 "!" {return NOT;}
 "=" {return GETS;}
 
-//Syntax pieces
-
 "{" {return CURLY_OPEN;}
 "}" {return CURLY_CLOSE;}
 "(" {return PARANTHESES_OPEN;}
@@ -70,18 +48,25 @@ void InvalidToken();
 ";" {return SEMICOLON;}
 "," {return COMMA;}
 
-//Arithmetic exp
-
 "+" {return PLUS;}
 "-" {return MINUS;}
 "*" {return MUL;}
 "/" {return DIV;}
 "." {return DOT;}
 
+[a-zA-Z][_a-zA-Z0-9]*(\[[0-9]+\])+  {yylval.str = strdup(yytext);return ARRAY;}
 
-. 			{InvalidToken();}
-[ \t] 		{}						//whitespace
-\n 			{yylineno++;}
+[a-zA-Z][_a-zA-Z0-9]*               {yylval.dataType = strdup(yytext);return VARIABLE;}
+
+[0-9]+ 							    {yylval.intVal= atoi(yytext);return INTEGER;}
+
+[0-9]*\.?[0-9]+                     {yylval.floatVal = atof(yytext);return FLOAT_VALUE;}
+
+\"[_a-zA-Z0-9]*\"              {yylval.charVal = yytext[1];return CHARACTER;}
+
+
+. 			{InvalidToken();}						
+[\n] 			{yylineno++;}
 
 %%
 

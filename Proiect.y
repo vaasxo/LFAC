@@ -5,11 +5,12 @@
 %}
 
 %union{
-	int num;
+
 	char* str;
 	char* dataType;
 	float floatVal;
-
+	int intVal;
+	char charVal;
 }
 
 %token <dataType> TYPE
@@ -70,3 +71,10 @@ DECLARE : TYPE VARIABLE SEMICOLON
 
 
 %%
+
+int main(){
+
+  yyparse();
+  printf("No Errors!!\n");
+  return 0;
+}
