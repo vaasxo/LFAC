@@ -2,7 +2,8 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "Proiect.tab.h"
+#include "y.tab.h"
+
 void extern yyerror(char*);
 void InvalidToken();
 
