@@ -2,13 +2,13 @@
 	#include <stdio.h>
 	extern 
 
-}%
+%}
 
 %union{
 	int num;
 	char* str;
 	char* dataType;
-	float float;
+	float floatVal;
 
 }
 
