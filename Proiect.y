@@ -33,12 +33,15 @@
   			yyerror(buffer);
   			exit(0);
   		}
-  		variables[varCount].name=strdup(type);
+
+  		variables[varCount].name=strdup(varName);
 
   		if(isConst==0)
-  			variables[varCount].type=strdup(varName);
+  			variables[varCount].type=strdup(type);
   		//else
   			//variables[varCount].type=strdup(strcat("const ",varName));
+
+  		printf("%s \n", type);
 
   		variables[varCount].isConst=isConst;
   		variables[varCount].isAssigned=0;
@@ -142,9 +145,9 @@ DECLARE : EXPRESSION SEMICOLON
 
 EXPRESSION : TYPE VARIABLE {declare($1,$2,0);}
 		   | CONST TYPE VARIABLE {yyerror("Value must be assigned to constant variable.");}
-		   | CONST TYPE VARIABLE ASSIGN INTEGER{declare($2,$3,1);assignInt($2,$5);}
-		   | CONST TYPE VARIABLE ASSIGN FLOAT_VALUE{declare($2,$3,1);assignFloat($2,$5);}
-		   | EXPRESSION COMMA VARIABLE 
+		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assignInt($2,$5);}
+		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assignFloat($2,$5);}
+		   | EXPRESSION COMMA VARIABLE {declare($1,$3,0);}
 		   | EXPRESSION ASSIGN VALUE
 		   | TYPE ARRAY
 		   | EXPRESSION EQUAL PARANTHESES_OPEN PARAMETERS PARANTHESES_CLOSE
