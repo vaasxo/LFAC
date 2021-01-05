@@ -4,6 +4,7 @@
   	extern int yylex();
   	extern char* yytext;
   	extern int yylineno;
+  	extern FILE *yyin;
 
   	int eval(int x)
   	{
@@ -74,6 +75,7 @@
 DECLARE : EXPRESSION SEMICOLON
 		| FUNCTION SEMICOLON 
 		| CLASS SEMICOLON
+		| DECLARE DECLARE
 		;
 
 EXPRESSION : TYPE VARIABLE
@@ -107,6 +109,7 @@ FUNCTION : TYPE VARIABLE PARANTHESES_OPEN LIST_VARIABLE PARANTHESES_CLOSE
 CLASS : OBJECT VARIABLE CURLY_OPEN MEMBERS METHODS CURLY_CLOSE
       | OBJECT VARIABLE CURLY_OPEN MEMBERS CURLY_CLOSE
       | OBJECT VARIABLE CURLY_OPEN METHODS CURLY_CLOSE
+      | OBJECT VARIABLE CURLY_OPEN CURLY_CLOSE
       ;
 
 LIST_FUNCTION : FUNCTION
@@ -122,9 +125,14 @@ LIST_VARIABLE : TYPE VARIABLE
               ;
 %%
 
-int main(){
-
-  yyparse();
-  printf("No Errors!!\n");
-  return 0;
+int main(int argc, char *argv[])
+{
+	if(argc>1)
+		yyin = fopen(argv[1], "r");
+	//FILE *f=fopen("usedSymbols.txt","w");
+  	if(!yyparse())
+    	printf("\nParsing complete\n");
+  	else
+       printf("\nParsing failed\n");
+  	return 0;
 }

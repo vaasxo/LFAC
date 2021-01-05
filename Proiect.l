@@ -54,9 +54,9 @@ void InvalidToken();
 "/" {return DIV;}
 "." {return DOT;}
 
-[a-zA-Z][_a-zA-Z0-9]*(\[[0-9]+\])+  {yylval.str = strdup(yytext);return ARRAY;}
+[_a-zA-Z][_a-zA-Z0-9]*(\[[0-9]+\])+  {yylval.str = strdup(yytext);return ARRAY;}
 
-[a-zA-Z][_a-zA-Z0-9]*               {yylval.dataType = strdup(yytext);return VARIABLE;}
+[_a-zA-Z][_a-zA-Z0-9]*               {yylval.dataType = strdup(yytext);return VARIABLE;}
 
 [0-9]+ 							    {yylval.intVal= atoi(yytext);return INTEGER;}
 
