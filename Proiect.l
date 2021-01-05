@@ -36,7 +36,7 @@ void InvalidToken();
 ">" {return GTHAN;}
 "<" {return LTHAN;}
 "!" {return NOT;}
-"=" {return GETS;}
+"=" {return ASSIGN;}
 
 "{" {return CURLY_OPEN;}
 "}" {return CURLY_CLOSE;}
