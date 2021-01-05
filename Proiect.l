@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "y.tab.h"
-
 void extern yyerror(char*);
 void InvalidToken();
 
@@ -61,13 +60,16 @@ void InvalidToken();
 
 [0-9]+ 							    {yylval.intVal= atoi(yytext);return INTEGER;}
 
-[0-9]*\.?[0-9]+                     {yylval.floatVal = atof(yytext);return FLOAT_VALUE;}
+[0-9]*\.?[0-9]+                      {yylval.floatVal = atof(yytext);return FLOAT_VALUE;}
 
-\"[_a-zA-Z0-9]*\"              {yylval.charVal = yytext[1];return CHARACTER;}
+[\'][_a-zA-Z]*[\']                  {yylval.charVal = yytext[1];return CHARACTER;}
+
+\"(\\.|[^"])*\"                     {yylval.strVal = strdup(yytext); return STRING_VALUE;}
 
 
-. 			{InvalidToken();}						
-[\n] 			{yylineno++;}
+[ \t] 		;						
+\n 			{yylineno++;}
+. 			{InvalidToken();}
 
 %%
 
