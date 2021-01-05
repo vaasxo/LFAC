@@ -15,18 +15,23 @@
   		bool isConst;
   		bool isAssigned;
   	}variables[300];
+  	struct funInfo{
+  		char* type;
+  		char* name;
+
+  	};
 
   	int varCount=0;
   	int findVariable(char*varName)
   	{
   		for(int i=0;i<varCount;i++)
   			if(strcmp(variables[i].name,varName)==0)
-  				return 1;
-  		return 0;
+  				return i;
+  		return -1;
   	}
   	void declare(char * type, char* varName,bool isConst)
   	{
-  		if(findVariable(varName)==1)
+  		if(findVariable(varName)!=-1)
   		{
   			char buffer[50];
   			sprintf(buffer,"Variable '%s' has already been declared.",varName);
@@ -41,8 +46,6 @@
   		//else
   			//variables[varCount].type=strdup(strcat("const ",varName));
 
-  		printf("%s \n", type);
-
   		variables[varCount].isConst=isConst;
   		variables[varCount].isAssigned=0;
   		varCount++;
@@ -50,20 +53,34 @@
 
   	}
 
-  	void assignInt(char * type,int assignedValue)
+  	void assign(char * type,float assignedValue)  //modified
   	{
-  		if(strcmp(type,"int")!=0&&strcmp(type,"float")!=0 )
+  		if(strcmp(type,"int")==0)
   		{
-  			char buffer[50];
-  			sprintf(buffer,"Cannot assign value of type <int> to type <%s>.",type);
-  			yyerror(buffer);
-  			exit(0);
+  			int aux = assignedValue;
+
+  			if(aux!=assignedValue)
+  			{
+  				char buffer[50];
+  				sprintf(buffer,"Cannot assign value of type <float> to type <%s>.",type);
+  				yyerror(buffer);
+  				exit(0);
+  			}
+
+  			variables[varCount-1].isAssigned=1;
+  			variables[varCount-1].value=aux;
   		}
 
-  		variables[varCount-1].isAssigned=1;
-  		variables[varCount-1].value=assignedValue;
+  		if(strcmp(type,"float")==0)
+  		{
+  			float aux = (float)assignedValue;
+
+  			variables[varCount-1].isAssigned=1;
+  			variables[varCount-1].value=aux;
+  		}
+
   	}
-  	void assignFloat(char * type, float assignedValue)
+  	/*void assignFloat(char * type, float assignedValue)
   	{
   		if(strcmp(type,"float")!=0 )
   		{
@@ -74,7 +91,7 @@
   		}
   		variables[varCount-1].isAssigned=1;
   		variables[varCount-1].value=assignedValue;
-  	}
+  	}*/
 %}
 
 %union{
@@ -135,58 +152,44 @@
 %type <str> FUNCTION
 %type <str> DECLARE
 %type <str> EXPRESSION
+%type <floatVal> VALUE
 
 %%
-DECLARE : EXPRESSION SEMICOLON
-		| FUNCTION SEMICOLON 
+DECLARE : EXPRESSIONS SEMICOLON
+		| FUNCTIONS SEMICOLON 
 		| CLASS SEMICOLON
-		| DECLARE DECLARE
 		;
+
+EXPRESSIONS : EXPRESSION
+		    | EXPRESSIONS SEMICOLON EXPRESSION
 
 EXPRESSION : TYPE VARIABLE {declare($1,$2,0);}
-		   | CONST TYPE VARIABLE {yyerror("Value must be assigned to constant variable.");}
-		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assignInt($2,$5);}
-		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assignFloat($2,$5);}
+		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assign($2,$5);}
 		   | EXPRESSION COMMA VARIABLE {declare($1,$3,0);}
-		   | EXPRESSION ASSIGN VALUE
+		   | EXPRESSION ASSIGN VALUE {assign($1,$3);}
 		   | TYPE ARRAY
-		   | EXPRESSION EQUAL PARANTHESES_OPEN PARAMETERS PARANTHESES_CLOSE
 		   ;
 
-VALUE : INTEGER
-	  | FLOAT_VALUE
-	  | CHARACTER
+VALUE : INTEGER{$$=$1;}
+	  | FLOAT_VALUE{$$=$1;}
 	  ;
 
-MEMBERS : EXPRESSION SEMICOLON
-		| LIST_EXPRESSION SEMICOLON
-		| MEMBERS LIST_EXPRESSION SEMICOLON
-		;
-
-METHODS : FUNCTION SEMICOLON
-		| LIST_FUNCTION SEMICOLON
-		;
-
-PARAMETERS : VALUE
-		   | PARAMETERS COMMA VALUE
-		   ;
+FUNCTIONS : FUNCTION
+		  | FUNCTIONS SEMICOLON FUNCTION 
+		  ;	
 
 FUNCTION : TYPE VARIABLE PARANTHESES_OPEN LIST_VARIABLE PARANTHESES_CLOSE
-		 ;
+         | TYPE VARIABLE PARANTHESES_OPEN PARANTHESES_CLOSE
+         ;
 
-CLASS : OBJECT VARIABLE CURLY_OPEN MEMBERS METHODS CURLY_CLOSE
-      | OBJECT VARIABLE CURLY_OPEN MEMBERS CURLY_CLOSE
+METHODS : FUNCTIONS SEMICOLON
+		;
+
+CLASS : OBJECT VARIABLE CURLY_OPEN CURLY_CLOSE
+      | OBJECT VARIABLE CURLY_OPEN EXPRESSIONS SEMICOLON CURLY_CLOSE
       | OBJECT VARIABLE CURLY_OPEN METHODS CURLY_CLOSE
-      | OBJECT VARIABLE CURLY_OPEN CURLY_CLOSE
+      | OBJECT VARIABLE CURLY_OPEN EXPRESSIONS SEMICOLON METHODS CURLY_CLOSE
       ;
-
-LIST_FUNCTION : FUNCTION
-			  | LIST_FUNCTION COMMA FUNCTION
-			  ;
-
-LIST_EXPRESSION : EXPRESSION
-			    | LIST_EXPRESSION COMMA EXPRESSION
-			    ;
 
 LIST_VARIABLE : TYPE VARIABLE
               | LIST_VARIABLE COMMA TYPE VARIABLE
@@ -201,7 +204,7 @@ int main(int argc, char *argv[])
 	FILE *f=fopen("usedSymbols.txt","w");
 	fprintf(f,"Used variables are:\n");
 	for(int i=0;i<varCount;i++)
-		fprintf(f,"%d. name: %s; type: %s; \n",i+1,variables[i].name,variables[i].type);
+		fprintf(f,"%d. name: %s; type: %s; value: %d \n",i+1,variables[i].name,variables[i].type,variables[i].value);
 
   	return 0;
 }
