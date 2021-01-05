@@ -157,6 +157,7 @@ VALUE : INTEGER
 
 MEMBERS : EXPRESSION SEMICOLON
 		| LIST_EXPRESSION SEMICOLON
+		| MEMBERS LIST_EXPRESSION SEMICOLON
 		;
 
 METHODS : FUNCTION SEMICOLON
@@ -193,14 +194,11 @@ int main(int argc, char *argv[])
 {
 	if(argc>1)
 		yyin = fopen(argv[1], "r");
+	yyparse();
 	FILE *f=fopen("usedSymbols.txt","w");
 	fprintf(f,"Used variables are:\n");
 	for(int i=0;i<varCount;i++)
 		fprintf(f,"%d. name: %s; type: %s; \n",i+1,variables[i].name,variables[i].type);
 
-  	if(!yyparse())
-    	printf("\nParsing complete\n");
-  	else
-       printf("\nParsing failed\n");
   	return 0;
 }

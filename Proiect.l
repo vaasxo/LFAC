@@ -6,8 +6,11 @@
 void extern yyerror(char*);
 void InvalidToken();
 
+
 %}
 
+whitespace      [ \t\r\v\f]
+linefeed        \n
 
 %%
 
@@ -67,9 +70,9 @@ void InvalidToken();
 \"(\\.|[^"])*\"                     {yylval.strVal = strdup(yytext); return STRING_VALUE;}
 
 
-[ \t] 		;						
-\n 			{yylineno++;}
-. 			{InvalidToken();}
+{linefeed}                                      {yylineno++;}
+{whitespace}                                    ;
+.                                               {InvalidToken();}
 
 %%
 
