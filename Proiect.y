@@ -8,6 +8,7 @@
   	extern char* yytext;
   	extern int yylineno;
   	extern FILE *yyin;
+
   	struct varInfo{
   		char*type;
   		char*name;
@@ -15,6 +16,7 @@
   		bool isConst;
   		bool isAssigned;
   	};
+
   	struct varInfo variables[300];
 
   	struct {
@@ -24,7 +26,20 @@
         struct varInfo parameters[30];
   	}functions[300];
 
+  	int eval_returns[10];
+  	int eval_counter=0;
+
   	int varCount=0,functionCount=0,parametersCount=0;
+
+  	int eval(float expression)
+  	{
+  		int aux = (int)expression;
+  		if(aux==expression)
+  		{
+  			eval_returns[eval_counter]=aux;
+  			eval_counter++;
+  		}
+  	}
 
   	int findVariable(char*varName)
   	{
@@ -61,7 +76,7 @@
   	{
   		if(strcmp(type,"int")==0)
   		{
-  			int aux = assignedValue;
+  			int aux = (int)assignedValue;
 
   			if(aux!=assignedValue)
   			{
@@ -146,6 +161,20 @@
       functions[functionCount].parameters[parametersCount].name=strdup(paramName);
       functions[functionCount].parameters[parametersCount].type=strdup(type);
       parametersCount++;
+    }
+
+    float getVal(char* name)
+    {
+    	int position = findVariable(name);
+  		if(position!=-1)
+  			return variables[position].value;
+  		else
+  		{
+  			char buffer[50];
+  			sprintf(buffer,"Cannot get value of undefined variable.");
+  			yyerror(buffer);
+  			exit(0);
+		}
     }
 %}
 
@@ -258,7 +287,7 @@ block : code
 
 code  : IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
       | IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE ELSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
-      | WHILE PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statement SEMICOLON CURLY_CLOSE 
+      | WHILE PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
       | statements SEMICOLON
       | declarations 
       ;
@@ -291,17 +320,17 @@ statement : VARIABLE ASSIGN exprs {assign_2($1,$3);}
           | statement COMMA VARIABLE EQUAL exprs
           ;
 
-exprs : expr PLUS expr {$$ = $1 + $3;}
-      | expr MINUS expr {$$ = $1 - $3;}
-      | expr MUL expr {$$ = $1 * $3;}
-      | expr DIV expr {$$ = $1 / $3;}
+exprs : expr PLUS expr {$$ = $1 + $3; eval($$);}
+      | expr MINUS expr {$$ = $1 - $3;eval($$);}
+      | expr MUL expr {$$ = $1 * $3;eval($$);}
+      | expr DIV expr {$$ = $1 / $3;eval($$);}
       | expr
       ;
 
 expr : PARANTHESES_OPEN expr PARANTHESES_CLOSE {$$ = $2;}
      | VALUE {$$ = $1;}
      | VARIABLE BRACKET_OPEN VALUE BRACKET_CLOSE {$$ = 0;}
-     | VARIABLE
+     | VARIABLE {$$=getVal($1);}
      ;
 
 function_call : VARIABLE PARANTHESES_OPEN params PARANTHESES_CLOSE
@@ -315,15 +344,20 @@ int main(int argc, char *argv[])
 {
 	if(argc>1)
 		yyin = fopen(argv[1], "r");
+
 	yyparse();
+
 	FILE *f=fopen("usedSymbols.txt","w");
+
 	fprintf(f,"Used variables are:\n");
+
     for(int i=0;i<varCount;i++)
 		fprintf(f,"%d. name: %s; type: %s; value: %d \n",i+1,variables[i].name,variables[i].type,variables[i].value);
     if(varCount==0)
         fprintf(f,"NONE\n");
 
     fprintf(f,"Used functions are:\n");
+
     for(int i=0;i<functionCount;i++)
     {
 
@@ -333,9 +367,13 @@ int main(int argc, char *argv[])
 
         fprintf(f,")\n");
     }
+
     //fprintf(f,"%s %s",functions[0].type,functions[0].name);
     if(functionCount==0)
         fprintf(f,"NONE\n");
+
+    for(int i=0;i<eval_counter;i++)
+    	printf("%d ", eval_returns[i]);
 
   	return 0;
 }
