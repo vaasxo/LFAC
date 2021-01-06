@@ -172,8 +172,9 @@
     void FunEval(char* name)
     {
     	int position = findFunction(name);
+    	int Ok=0;
   		if(position!=-1)
-  			exit(0);
+  			Ok=1;
   			//Evaluate the function call - to be implemented
   		else
   		{
@@ -352,6 +353,7 @@ function_call : VARIABLE PARANTHESES_OPEN params PARANTHESES_CLOSE {FunEval($1);
 			  ;
 
 params : expr
+	   | params COMMA params
        ;
 %%
 
