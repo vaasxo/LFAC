@@ -85,6 +85,21 @@
 
   	}
 
+  	void assign_2(char * name,float value)  //modified
+  	{
+  		int position = findVariable(name);
+  		if(position!=-1)
+  			variables[position].value=value;
+  		else
+  		{
+  			char buffer[50];
+  			sprintf(buffer,"Cannot assign value to undeclared variable.");
+  			yyerror(buffer);
+  			exit(0);
+		}
+
+  	}
+
   	int findFunction(char*functionName)
     {
       for(int i=0;i<functionCount;i++)
@@ -197,7 +212,7 @@
 
 %%
 
-correct : program {printf("Program corect.\n");}
+compile : program {printf("Success.\n");}
         ;
 
 program : classes declarations main
@@ -218,7 +233,7 @@ declarations : declaration SEMICOLON
 			 | declarations declaration SEMICOLON
 
 declaration : CONST TYPE VARIABLE ASSIGN VALUE {declare($2,$3,1);assign($2,$5);}
-		    | TYPE VARIABLE ASSIGN VALUE {declare($1,$2,0);assign($2,$4);}
+		    | TYPE VARIABLE ASSIGN VALUE {declare($1,$2,0);assign($1,$4);}
 		    | CONST TYPE VARIABLE {yyerror("Constant variable must be assigned with value");}
 		    | TYPE VARIABLE  {declare($1,$2,0);}
 		    | TYPE ARRAY 
@@ -226,7 +241,7 @@ declaration : CONST TYPE VARIABLE ASSIGN VALUE {declare($2,$3,1);assign($2,$5);}
             | TYPE VARIABLE PARANTHESES_OPEN PARANTHESES_CLOSE {defineFunction($1,$2);}
 		    ;
 
-main : MAIN CURLY_OPEN blocks CURLY_CLOSE
+main : MAIN CURLY_OPEN block CURLY_CLOSE
 	 ;
 
 VALUE : INTEGER{$$=$1;}
@@ -237,8 +252,8 @@ LIST_VARIABLE : TYPE VARIABLE {defineParameters($1,$2);}
               | LIST_VARIABLE COMMA TYPE VARIABLE {defineParameters($3,$4);}
               ;
 
-blocks : code 
-       | blocks SEMICOLON code
+block : code 
+       | block SEMICOLON code
        ; 
 
 code  : IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
@@ -271,7 +286,7 @@ statements : statement
            | statements SEMICOLON statement 
            ;
 
-statement : VARIABLE ASSIGN exprs
+statement : VARIABLE ASSIGN exprs {assign_2($1,$3);}
           | function_call
           | statement COMMA VARIABLE EQUAL exprs
           ;
