@@ -14,14 +14,18 @@
   		int value;
   		bool isConst;
   		bool isAssigned;
-  	}variables[300];
-  	struct funInfo{
+  	};
+  	struct varInfo variables[300];
+
+  	struct {
   		char* type;
   		char* name;
+        int paramCount;
+        struct varInfo parameters[30];
+  	}functions[300];
 
-  	};
+  	int varCount=0,functionCount=0,parametersCount=0;
 
-  	int varCount=0;
   	int findVariable(char*varName)
   	{
   		for(int i=0;i<varCount;i++)
@@ -80,18 +84,54 @@
   		}
 
   	}
-  	/*void assignFloat(char * type, float assignedValue)
-  	{
-  		if(strcmp(type,"float")!=0 )
-  		{
-  			char buffer[50];
-  			sprintf(buffer,"Cannot assign value of type <float> to type <%s>.",type);
-  			yyerror(buffer);
-  			exit(0);
-  		}
-  		variables[varCount-1].isAssigned=1;
-  		variables[varCount-1].value=assignedValue;
-  	}*/
+
+  	int findFunction(char*functionName)
+    {
+      for(int i=0;i<functionCount;i++)
+        if(strcmp(functions[i].name,functionName)==0)
+          return i;
+      return -1;
+    }
+
+    void defineFunction(char * type, char * functionName)
+    {
+      //end of function declaration
+      if(findFunction(functionName)!=-1)
+      {
+        char buffer[50];
+        sprintf(buffer,"Function '%s' has already been declared.",functionName);
+        yyerror(buffer);
+        exit(0);
+      }
+      functions[functionCount].type=strdup(type);
+      functions[functionCount].name=strdup(functionName);
+      functions[functionCount].paramCount=parametersCount;
+      parametersCount=0;
+      functionCount++;
+    }
+    int findParameter(char*paramName)
+    {
+      for(int i=0;i<parametersCount;i++)
+        if(strcmp(functions[functionCount].parameters[i].name,paramName)==0)
+          return i;
+      return -1;
+
+    }
+    void defineParameters(char * type,char* paramName)
+    {
+      //check parameters first
+        if(findParameter(paramName)!=-1)
+      {
+        char buffer[50];
+        sprintf(buffer,"Parameter '%s' has been declared twice.",paramName);
+        yyerror(buffer);
+        exit(0);
+      }
+
+      functions[functionCount].parameters[parametersCount].name=strdup(paramName);
+      functions[functionCount].parameters[parametersCount].type=strdup(type);
+      parametersCount++;
+    }
 %}
 
 %union{
@@ -107,13 +147,15 @@
 %token <dataType> TYPE
 %token <dataType> OBJECT
 
-%token <dataType> VARIABLE
+%token <str> VARIABLE
 %token <str> ARRAY
 %token <intVal> INTEGER
 %token <floatVal>  FLOAT_VALUE
 %token <charVal> CHARACTER
 %token <strVal> STRING_VALUE
 %token CONST
+
+%token MAIN
 
 %token IF
 %token ELSE
@@ -149,51 +191,88 @@
 %token DIV
 %token DOT
 
-%type <str> FUNCTION
-%type <str> DECLARE
-%type <str> EXPRESSION
-%type <floatVal> VALUE
+%type <floatVal> VALUE 
 
 %%
-DECLARE : EXPRESSIONS SEMICOLON
-		| FUNCTIONS SEMICOLON 
-		| CLASS SEMICOLON
-		;
 
-EXPRESSIONS : EXPRESSION
-		    | EXPRESSIONS SEMICOLON EXPRESSION
+correct : program {printf("Program corect.\n");}
+        ;
 
-EXPRESSION : TYPE VARIABLE {declare($1,$2,0);}
-		   | CONST TYPE VARIABLE ASSIGN VALUE{declare($2,$3,1);assign($2,$5);}
-		   | EXPRESSION COMMA VARIABLE {declare($1,$3,0);}
-		   | EXPRESSION ASSIGN VALUE {assign($1,$3);}
-		   | TYPE ARRAY
-		   ;
+program : classes declarations main
+        | declarations main
+        | classes main
+        | main
+        ;
+
+classes : class SEMICOLON
+        | classes class SEMICOLON
+        ;
+
+class : OBJECT VARIABLE CURLY_OPEN CURLY_CLOSE 
+      | OBJECT VARIABLE CURLY_OPEN declarations CURLY_CLOSE  
+      ;
+
+declarations : declaration SEMICOLON
+			 | declarations declaration SEMICOLON
+
+declaration : CONST TYPE VARIABLE ASSIGN VALUE {declare($2,$3,1);assign($2,$5);}
+		    | TYPE VARIABLE ASSIGN VALUE {declare($1,$2,0);assign($2,$4);}
+		    | CONST TYPE VARIABLE {yyerror("Constant variable must be assigned with value");}
+		    | TYPE VARIABLE  {declare($1,$2,0);}
+		    | TYPE ARRAY 
+		    | TYPE VARIABLE PARANTHESES_OPEN LIST_VARIABLE PARANTHESES_CLOSE {defineFunction($1,$2);}
+            | TYPE VARIABLE PARANTHESES_OPEN PARANTHESES_CLOSE {defineFunction($1,$2);}
+		    ;
+
+main : MAIN CURLY_OPEN blocks CURLY_CLOSE
+	 ;
 
 VALUE : INTEGER{$$=$1;}
 	  | FLOAT_VALUE{$$=$1;}
 	  ;
 
-FUNCTIONS : FUNCTION
-		  | FUNCTIONS SEMICOLON FUNCTION 
-		  ;	
+LIST_VARIABLE : TYPE VARIABLE {defineParameters($1,$2);}
+              | LIST_VARIABLE COMMA TYPE VARIABLE {defineParameters($3,$4);}
+              ;
 
-FUNCTION : TYPE VARIABLE PARANTHESES_OPEN LIST_VARIABLE PARANTHESES_CLOSE
-         | TYPE VARIABLE PARANTHESES_OPEN PARANTHESES_CLOSE
-         ;
+blocks : code SEMICOLON
+       | blocks code SEMICOLON
+       ; 
 
-METHODS : FUNCTIONS SEMICOLON
-		;
-
-CLASS : OBJECT VARIABLE CURLY_OPEN CURLY_CLOSE
-      | OBJECT VARIABLE CURLY_OPEN EXPRESSIONS SEMICOLON CURLY_CLOSE
-      | OBJECT VARIABLE CURLY_OPEN METHODS CURLY_CLOSE
-      | OBJECT VARIABLE CURLY_OPEN EXPRESSIONS SEMICOLON METHODS CURLY_CLOSE
+code  : IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements CURLY_CLOSE 
+      | IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements CURLY_CLOSE ELSE CURLY_OPEN statements CURLY_CLOSE 
+      | WHILE PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statement CURLY_CLOSE 
+      | statements
+      | declarations 
       ;
 
-LIST_VARIABLE : TYPE VARIABLE
-              | LIST_VARIABLE COMMA TYPE VARIABLE
-              ;
+conditions : condition AND condition
+           | condition OR condition
+           | NOT condition
+           | condition
+           ;
+
+condition : operand LTHAN operand
+          | operand GTHAN operand
+          | operand LOREQ operand
+          | operand GOREQ operand
+          | operand EQUAL operand
+          | operand NOTEQUAL operand
+          ;
+
+operand : VARIABLE
+        | VALUE
+        //| function_call
+        ;
+
+statements : statement SEMICOLON
+           | statements statement SEMICOLON
+           ;
+
+statement : VARIABLE EQUAL VALUE
+          //| function_call
+          | statement COMMA VARIABLE EQUAL VALUE
+          ;
 %%
 
 int main(int argc, char *argv[])
@@ -203,8 +282,24 @@ int main(int argc, char *argv[])
 	yyparse();
 	FILE *f=fopen("usedSymbols.txt","w");
 	fprintf(f,"Used variables are:\n");
-	for(int i=0;i<varCount;i++)
+    for(int i=0;i<varCount;i++)
 		fprintf(f,"%d. name: %s; type: %s; value: %d \n",i+1,variables[i].name,variables[i].type,variables[i].value);
+    if(varCount==0)
+        fprintf(f,"NONE\n");
+
+    fprintf(f,"Used functions are:\n");
+    for(int i=0;i<functionCount;i++)
+    {
+
+        fprintf(f,"%d. %s %s(",i+1,functions[i].type,functions[i].name);
+        for(int j=0;j<functions[i].paramCount;j++)
+            fprintf(f,"%s %s,",functions[i].parameters[j].type,functions[i].parameters[j].name);
+
+        fprintf(f,")\n");
+    }
+    //fprintf(f,"%s %s",functions[0].type,functions[0].name);
+    if(functionCount==0)
+        fprintf(f,"NONE\n");
 
   	return 0;
 }

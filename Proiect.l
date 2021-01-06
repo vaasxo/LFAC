@@ -24,6 +24,7 @@ linefeed        \n
 
 "object"  {yylval.dataType = strdup(yytext);return OBJECT;}
 
+"main"  {return MAIN;}
 
 "if"  {return IF;}
 "else"  {return ELSE;}
