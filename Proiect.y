@@ -33,7 +33,7 @@
 
   	int eval(float expression)
   	{
-  		int aux = (int)expression;
+  		int aux = expression;
   		if(aux==expression)
   		{
   			eval_returns[eval_counter]=aux;
@@ -59,12 +59,7 @@
   		}
 
   		variables[varCount].name=strdup(varName);
-
-  		if(isConst==0)
-  			variables[varCount].type=strdup(type);
-  		//else
-  			//variables[varCount].type=strdup(strcat("const ",varName));
-
+ 		variables[varCount].type=strdup(type);
   		variables[varCount].isConst=isConst;
   		variables[varCount].isAssigned=0;
   		varCount++;
@@ -103,12 +98,12 @@
   	void assign_2(char * name,float value)  //modified
   	{
   		int position = findVariable(name);
-  		if(position!=-1)
+  		if(position!=-1 && variables[position].isConst==0)
   			variables[position].value=value;
   		else
   		{
   			char buffer[50];
-  			sprintf(buffer,"Cannot assign value to undeclared variable.");
+  			sprintf(buffer,"Cannot assign value to undeclared/const variable.");
   			yyerror(buffer);
   			exit(0);
 		}
@@ -166,7 +161,7 @@
     float getVal(char* name)
     {
     	int position = findVariable(name);
-  		if(position!=-1)
+  		if(position!=-1 && variables[position].isAssigned==1)
   			return variables[position].value;
   		else
   		{
