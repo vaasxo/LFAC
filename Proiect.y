@@ -191,7 +191,9 @@
 %token DIV
 %token DOT
 
-%type <floatVal> VALUE 
+%type <floatVal> VALUE exprs expr
+
+%type <str> function_call
 
 %%
 
@@ -235,14 +237,14 @@ LIST_VARIABLE : TYPE VARIABLE {defineParameters($1,$2);}
               | LIST_VARIABLE COMMA TYPE VARIABLE {defineParameters($3,$4);}
               ;
 
-blocks : code SEMICOLON
-       | blocks code SEMICOLON
+blocks : code 
+       | blocks SEMICOLON code
        ; 
 
-code  : IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements CURLY_CLOSE 
-      | IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements CURLY_CLOSE ELSE CURLY_OPEN statements CURLY_CLOSE 
-      | WHILE PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statement CURLY_CLOSE 
-      | statements
+code  : IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
+      | IF PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE ELSE CURLY_OPEN statements SEMICOLON CURLY_CLOSE 
+      | WHILE PARANTHESES_OPEN conditions PARANTHESES_CLOSE CURLY_OPEN statement SEMICOLON CURLY_CLOSE 
+      | statements SEMICOLON
       | declarations 
       ;
 
@@ -262,17 +264,36 @@ condition : operand LTHAN operand
 
 operand : VARIABLE
         | VALUE
-        //| function_call
+        | function_call
         ;
 
-statements : statement SEMICOLON
-           | statements statement SEMICOLON
+statements : statement 
+           | statements SEMICOLON statement 
            ;
 
-statement : VARIABLE EQUAL VALUE
-          //| function_call
-          | statement COMMA VARIABLE EQUAL VALUE
+statement : VARIABLE ASSIGN exprs
+          | function_call
+          | statement COMMA VARIABLE EQUAL exprs
           ;
+
+exprs : expr PLUS expr {$$ = $1 + $3;}
+      | expr MINUS expr {$$ = $1 - $3;}
+      | expr MUL expr {$$ = $1 * $3;}
+      | expr DIV expr {$$ = $1 / $3;}
+      | expr
+      ;
+
+expr : PARANTHESES_OPEN expr PARANTHESES_CLOSE {$$ = $2;}
+     | VALUE {$$ = $1;}
+     | VARIABLE BRACKET_OPEN VALUE BRACKET_CLOSE {$$ = 0;}
+     | VARIABLE
+     ;
+
+function_call : VARIABLE PARANTHESES_OPEN params PARANTHESES_CLOSE
+			  ;
+
+params : expr
+       ;
 %%
 
 int main(int argc, char *argv[])
