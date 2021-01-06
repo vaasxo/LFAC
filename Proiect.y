@@ -176,6 +176,21 @@
   			exit(0);
 		}
     }
+
+    void FunEval(char* name)
+    {
+    	int position = findFunction(name);
+  		if(position!=-1)
+  			exit(0);
+  			//Evaulate the function call - to be implemented
+  		else
+  		{
+  			char buffer[50];
+  			sprintf(buffer,"Cannot call undeclared function.");
+  			yyerror(buffer);
+  			exit(0);
+		}
+    }
 %}
 
 %union{
@@ -333,7 +348,7 @@ expr : PARANTHESES_OPEN expr PARANTHESES_CLOSE {$$ = $2;}
      | VARIABLE {$$=getVal($1);}
      ;
 
-function_call : VARIABLE PARANTHESES_OPEN params PARANTHESES_CLOSE
+function_call : VARIABLE PARANTHESES_OPEN params PARANTHESES_CLOSE {FunEval($1);}
 			  ;
 
 params : expr
@@ -352,7 +367,7 @@ int main(int argc, char *argv[])
 	fprintf(f,"Used variables are:\n");
 
     for(int i=0;i<varCount;i++)
-		fprintf(f,"%d. name: %s; type: %s; value: %d \n",i+1,variables[i].name,variables[i].type,variables[i].value);
+		fprintf(f,"%d. name: %s; type: %s; value: %d; isConstant: %d\n",i+1,variables[i].name,variables[i].type,variables[i].value,variables[i].isConst);
     if(varCount==0)
         fprintf(f,"NONE\n");
 
